@@ -11,11 +11,14 @@ export async function seedDatabase(dataSource: DataSource) {
   const teamMemberRepository = dataSource.getRepository(TeamMember);
   const taskRepository = dataSource.getRepository(Task);
 
-  // Clear existing data
-  await taskRepository.delete({});
-  await teamMemberRepository.delete({});
-  await teamRepository.delete({});
-  await userRepository.delete({});
+ // Clear existing data
+await taskRepository.createQueryBuilder().delete().execute();
+await teamMemberRepository.createQueryBuilder().delete().execute();
+await teamRepository.createQueryBuilder().delete().execute();
+await userRepository.createQueryBuilder().delete().execute();
+
+
+
 
   // Create users
   const hashedPassword = await bcrypt.hash('password123', 10);

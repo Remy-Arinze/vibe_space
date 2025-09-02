@@ -1,0 +1,28 @@
+import { Repository } from 'typeorm';
+import { Team } from './entities/team.entity';
+import { TeamMember, TeamRole } from './entities/team-member.entity';
+import { CreateTeamDto } from './dto/create-team.dto';
+import { UpdateTeamDto } from './dto/update-team.dto';
+import { AddTeamMemberDto } from './dto/add-team-member.dto';
+import { UsersService } from '../users/users.service';
+import { User } from '../users/entities/user.entity';
+export declare class TeamsService {
+    private teamsRepository;
+    private teamMembersRepository;
+    private usersService;
+    constructor(teamsRepository: Repository<Team>, teamMembersRepository: Repository<TeamMember>, usersService: UsersService);
+    create(createTeamDto: CreateTeamDto, user: User): Promise<Team>;
+    findAll(userId: string): Promise<Team[]>;
+    findOne(id: string): Promise<Team>;
+    update(id: string, updateTeamDto: UpdateTeamDto, userId: string): Promise<Team>;
+    remove(id: string, userId: string): Promise<void>;
+    addMember(teamId: string, addTeamMemberDto: AddTeamMemberDto, userId: string): Promise<TeamMember>;
+    removeMember(teamId: string, memberUserId: string, requestingUserId: string): Promise<void>;
+    updateMemberRole(teamId: string, memberUserId: string, role: TeamRole, requestingUserId: string): Promise<TeamMember>;
+    getTeamMembers(teamId: string): Promise<TeamMember[]>;
+    getUserTeamRole(teamId: string, userId: string): Promise<TeamRole | null>;
+    isUserTeamMember(teamId: string, userId: string): Promise<boolean>;
+    isUserTeamAdmin(teamId: string, userId: string): Promise<boolean>;
+    verifyUserIsTeamMember(teamId: string, userId: string): Promise<void>;
+    verifyUserIsTeamAdmin(teamId: string, userId: string): Promise<void>;
+}
