@@ -17,11 +17,13 @@ const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const uuid_1 = require("uuid");
 const users_service_1 = require("../users/users.service");
+const email_service_1 = require("../common/services/email.service");
 let AuthService = class AuthService {
-    constructor(usersService, jwtService, configService) {
+    constructor(usersService, jwtService, configService, emailService) {
         this.usersService = usersService;
         this.jwtService = jwtService;
         this.configService = configService;
+        this.emailService = emailService;
         this.transporter = nodemailer.createTransport({
             host: this.configService.get('MAIL_HOST', 'smtp.mailtrap.io'),
             port: this.configService.get('MAIL_PORT', 2525),
@@ -66,7 +68,13 @@ let AuthService = class AuthService {
             verificationToken,
             verificationTokenExpiry,
         });
-        await this.sendVerificationEmail(user.email, verificationToken);
+        const verificationUrl = `${this.configService.get('FRONTEND_URL', 'http://localhost:3000')}/auth/verify-email?token=${verificationToken}`;
+        await this.emailService.sendEmail(user.email, 'Verify your email address', `
+        <h1>Email Verification</h1>
+        <p>Thank you for registering with Vibe Space. Please verify your email address by clicking the link below:</p>
+        <a href="${verificationUrl}">Verify Email</a>
+        <p>This link will expire in 24 hours.</p>
+      `);
         const { password: _, verificationToken: __, verificationTokenExpiry: ___, ...result } = user;
         return result;
     }
@@ -116,6 +124,7 @@ exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [users_service_1.UsersService,
         jwt_1.JwtService,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        email_service_1.EmailService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

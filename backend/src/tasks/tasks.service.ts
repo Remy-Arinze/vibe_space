@@ -17,46 +17,45 @@ export class TasksService {
     private usersService: UsersService,
   ) {}
 
-  async create(createTaskDto: CreateTaskDto, creator: User): Promise<Task> {
-    // Check if user is a member of the team
-    const isMember = await this.teamsService.isUserTeamMember(creator.id, createTaskDto.teamId);
-    if (!isMember) {
-      throw new ForbiddenException('You must be a team member to create tasks');
-    }
-
-    // Check if assignee exists and is a team member
-    if (createTaskDto.assigneeId) {
-      const assignee = await this.usersService.findOne(createTaskDto.assigneeId);
-      const isAssigneeMember = await this.teamsService.isUserTeamMember(
-        assignee.id,
-        createTaskDto.teamId,
-      );
-      if (!isAssigneeMember) {
-        throw new ForbiddenException('Assignee must be a team member');
-      }
-    }
-
-    const task = this.tasksRepository.create({
-      ...createTaskDto,
-      creator,
-      creatorId: creator.id,
-    });
-
-    return this.tasksRepository.save(task);
+async create(createTaskDto: CreateTaskDto, creator: User): Promise<Task> {
+  // Check if user is a member of the team
+  const isMember = await this.teamsService.isUserTeamMember(createTaskDto.teamId, creator.id);
+  if (!isMember) {
+    throw new ForbiddenException('You must be a team member to create tasks');
   }
 
-  async findAll(teamId: string, userId: string): Promise<Task[]> {
-    // Check if user is a member of the team
-    const isMember = await this.teamsService.isUserTeamMember(userId, teamId);
-    if (!isMember) {
-      throw new ForbiddenException('You must be a team member to view tasks');
+  // Check if assignee exists and is a team member
+  if (createTaskDto.assigneeId) {
+    const assignee = await this.usersService.findOne(createTaskDto.assigneeId);
+    const isAssigneeMember = await this.teamsService.isUserTeamMember(
+      createTaskDto.teamId,
+      assignee.id,
+    );
+    if (!isAssigneeMember) {
+      throw new ForbiddenException('Assignee must be a team member');
     }
-
-    return this.tasksRepository.find({
-      where: { teamId },
-      relations: ['creator', 'assignee'],
-    });
   }
+
+  const task = this.tasksRepository.create({
+    ...createTaskDto,
+    creator,
+    creatorId: creator.id,
+  });
+
+  return this.tasksRepository.save(task);
+}
+
+ async findAll(teamId: string, userId: string): Promise<Task[]> {
+  const isMember = await this.teamsService.isUserTeamMember(teamId, userId);
+  if (!isMember) {
+    throw new ForbiddenException('You must be a team member to view tasks');
+  }
+
+  return this.tasksRepository.find({
+    where: { teamId },
+    relations: ['creator', 'assignee'],
+  });
+}
 
   async findOne(id: string, userId: string): Promise<Task> {
     const task = await this.tasksRepository.findOne({

@@ -26,13 +26,13 @@ let TasksService = class TasksService {
         this.usersService = usersService;
     }
     async create(createTaskDto, creator) {
-        const isMember = await this.teamsService.isUserTeamMember(creator.id, createTaskDto.teamId);
+        const isMember = await this.teamsService.isUserTeamMember(createTaskDto.teamId, creator.id);
         if (!isMember) {
             throw new common_1.ForbiddenException('You must be a team member to create tasks');
         }
         if (createTaskDto.assigneeId) {
             const assignee = await this.usersService.findOne(createTaskDto.assigneeId);
-            const isAssigneeMember = await this.teamsService.isUserTeamMember(assignee.id, createTaskDto.teamId);
+            const isAssigneeMember = await this.teamsService.isUserTeamMember(createTaskDto.teamId, assignee.id);
             if (!isAssigneeMember) {
                 throw new common_1.ForbiddenException('Assignee must be a team member');
             }
@@ -45,7 +45,7 @@ let TasksService = class TasksService {
         return this.tasksRepository.save(task);
     }
     async findAll(teamId, userId) {
-        const isMember = await this.teamsService.isUserTeamMember(userId, teamId);
+        const isMember = await this.teamsService.isUserTeamMember(teamId, userId);
         if (!isMember) {
             throw new common_1.ForbiddenException('You must be a team member to view tasks');
         }

@@ -2,12 +2,14 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { EmailService } from 'src/common/services/email.service';
 export declare class AuthService {
     private usersService;
     private jwtService;
     private configService;
+    private emailService;
     private transporter;
-    constructor(usersService: UsersService, jwtService: JwtService, configService: ConfigService);
+    constructor(usersService: UsersService, jwtService: JwtService, configService: ConfigService, emailService: EmailService);
     validateUser(email: string, password: string): Promise<any>;
     login(user: any): Promise<{
         access_token: string;

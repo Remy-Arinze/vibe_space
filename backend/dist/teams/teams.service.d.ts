@@ -6,11 +6,13 @@ import { UpdateTeamDto } from './dto/update-team.dto';
 import { AddTeamMemberDto } from './dto/add-team-member.dto';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
+import { EmailService } from 'src/common/services/email.service';
 export declare class TeamsService {
     private teamsRepository;
     private teamMembersRepository;
     private usersService;
-    constructor(teamsRepository: Repository<Team>, teamMembersRepository: Repository<TeamMember>, usersService: UsersService);
+    private emailService;
+    constructor(teamsRepository: Repository<Team>, teamMembersRepository: Repository<TeamMember>, usersService: UsersService, emailService: EmailService);
     create(createTeamDto: CreateTeamDto, user: User): Promise<Team>;
     findAll(userId: string): Promise<Team[]>;
     findOne(id: string): Promise<Team>;

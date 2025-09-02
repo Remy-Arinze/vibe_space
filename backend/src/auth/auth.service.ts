@@ -6,6 +6,7 @@ import * as nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { EmailService } from 'src/common/services/email.service';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +16,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private emailService: EmailService
   ) {
     // Initialize nodemailer transporter
     this.transporter = nodemailer.createTransport({
@@ -54,7 +56,7 @@ export class AuthService {
     };
   }
 
-  async register(createUserDto: CreateUserDto) {
+async register(createUserDto: CreateUserDto) {
     // Check if user already exists
     const existingUser = await this.usersService.findByEmail(createUserDto.email);
     if (existingUser) {
@@ -64,18 +66,30 @@ export class AuthService {
     // Generate verification token
     const verificationToken = uuidv4();
     const verificationTokenExpiry = new Date();
-    verificationTokenExpiry.setHours(verificationTokenExpiry.getHours() + 24); // Token valid for 24 hours
+    verificationTokenExpiry.setHours(verificationTokenExpiry.getHours() + 24);
 
-    // Create user with verification token
+    // Create user
     const user = await this.usersService.create({
       ...createUserDto,
       verificationToken,
       verificationTokenExpiry,
     });
 
-    // Send verification email
-    await this.sendVerificationEmail(user.email, verificationToken);
+    // Send verification email using EmailService
+    const verificationUrl = `${this.configService.get('FRONTEND_URL', 'http://localhost:3000')}/auth/verify-email?token=${verificationToken}`;
 
+    await this.emailService.sendEmail(
+      user.email,
+      'Verify your email address',
+      `
+        <h1>Email Verification</h1>
+        <p>Thank you for registering with Vibe Space. Please verify your email address by clicking the link below:</p>
+        <a href="${verificationUrl}">Verify Email</a>
+        <p>This link will expire in 24 hours.</p>
+      `,
+    );
+
+    // Return user without sensitive fields
     const { password: _, verificationToken: __, verificationTokenExpiry: ___, ...result } = user;
     return result;
   }

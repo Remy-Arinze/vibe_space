@@ -14,6 +14,7 @@ const teams_controller_1 = require("./teams.controller");
 const team_entity_1 = require("./entities/team.entity");
 const team_member_entity_1 = require("./entities/team-member.entity");
 const users_module_1 = require("../users/users.module");
+const email_service_1 = require("../common/services/email.service");
 let TeamsModule = class TeamsModule {
 };
 exports.TeamsModule = TeamsModule;
@@ -21,7 +22,7 @@ exports.TeamsModule = TeamsModule = __decorate([
     (0, common_1.Module)({
         imports: [typeorm_1.TypeOrmModule.forFeature([team_entity_1.Team, team_member_entity_1.TeamMember]), users_module_1.UsersModule],
         controllers: [teams_controller_1.TeamsController],
-        providers: [teams_service_1.TeamsService],
+        providers: [teams_service_1.TeamsService, email_service_1.EmailService],
         exports: [teams_service_1.TeamsService],
     })
 ], TeamsModule);

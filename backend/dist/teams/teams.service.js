@@ -19,11 +19,13 @@ const typeorm_2 = require("typeorm");
 const team_entity_1 = require("./entities/team.entity");
 const team_member_entity_1 = require("./entities/team-member.entity");
 const users_service_1 = require("../users/users.service");
+const email_service_1 = require("../common/services/email.service");
 let TeamsService = class TeamsService {
-    constructor(teamsRepository, teamMembersRepository, usersService) {
+    constructor(teamsRepository, teamMembersRepository, usersService, emailService) {
         this.teamsRepository = teamsRepository;
         this.teamMembersRepository = teamMembersRepository;
         this.usersService = usersService;
+        this.emailService = emailService;
     }
     async create(createTeamDto, user) {
         const team = this.teamsRepository.create(createTeamDto);
@@ -70,15 +72,13 @@ let TeamsService = class TeamsService {
         const team = await this.findOne(teamId);
         await this.verifyUserIsTeamAdmin(teamId, userId);
         const userToAdd = await this.usersService.findByEmail(addTeamMemberDto.email);
-        if (!userToAdd) {
+        if (!userToAdd)
             throw new common_1.NotFoundException(`User with email ${addTeamMemberDto.email} not found`);
-        }
         const existingMember = await this.teamMembersRepository.findOne({
             where: { teamId, userId: userToAdd.id },
         });
-        if (existingMember) {
+        if (existingMember)
             throw new common_1.BadRequestException(`User is already a member of this team`);
-        }
         const teamMember = this.teamMembersRepository.create({
             team,
             teamId,
@@ -86,15 +86,23 @@ let TeamsService = class TeamsService {
             userId: userToAdd.id,
             role: addTeamMemberDto.role || team_member_entity_1.TeamRole.MEMBER,
         });
-        return this.teamMembersRepository.save(teamMember);
+        const savedMember = await this.teamMembersRepository.save(teamMember);
+        await this.emailService.sendEmail(`"Team Manager" <${process.env.MAIL_FROM}>`, 'You have been added to a team', `<h1>Email Verification</h1>
+        <p>Hello ${userToAdd.username},</p>
+        <p>You have been added to the team "${team.name}" with the role "${teamMember.role}"</p>
+        <p>Best regards</p>
+        <p>Team Manager</p>
+        `);
+        return savedMember;
     }
     async removeMember(teamId, memberUserId, requestingUserId) {
-        await this.findOne(teamId);
+        const team = await this.findOne(teamId);
         if (memberUserId !== requestingUserId) {
             await this.verifyUserIsTeamAdmin(teamId, requestingUserId);
         }
         const teamMember = await this.teamMembersRepository.findOne({
             where: { teamId, userId: memberUserId },
+            relations: ['user', 'team'],
         });
         if (!teamMember) {
             throw new common_1.NotFoundException(`User is not a member of this team`);
@@ -108,26 +116,33 @@ let TeamsService = class TeamsService {
             }
         }
         await this.teamMembersRepository.remove(teamMember);
+        await this.emailService.sendEmail(`"Team Manager" <${process.env.MAIL_FROM}>`, 'You have been removed from a team', `<h1>Team Removal Notification</h1>
+     <p>Hello ${teamMember.user.username},</p>
+     <p>You have been removed from the team "${teamMember.team.name}".</p>
+     <p>If you believe this was a mistake, please contact your team administrator.</p>
+     <p>Best regards,</p>
+     <p>Team Manager</p>`);
     }
     async updateMemberRole(teamId, memberUserId, role, requestingUserId) {
         await this.findOne(teamId);
         await this.verifyUserIsTeamAdmin(teamId, requestingUserId);
-        const teamMember = await this.teamMembersRepository.findOne({
-            where: { teamId, userId: memberUserId },
-        });
-        if (!teamMember) {
+        const teamMember = await this.teamMembersRepository.findOne({ where: { teamId, userId: memberUserId }, relations: ['user', 'team'] });
+        if (!teamMember)
             throw new common_1.NotFoundException(`User is not a member of this team`);
-        }
         if (teamMember.role === team_member_entity_1.TeamRole.ADMIN && role === team_member_entity_1.TeamRole.MEMBER) {
-            const adminCount = await this.teamMembersRepository.count({
-                where: { teamId, role: team_member_entity_1.TeamRole.ADMIN },
-            });
-            if (adminCount <= 1) {
+            const adminCount = await this.teamMembersRepository.count({ where: { teamId, role: team_member_entity_1.TeamRole.ADMIN } });
+            if (adminCount <= 1)
                 throw new common_1.BadRequestException(`Cannot demote the last admin of the team`);
-            }
         }
         teamMember.role = role;
-        return this.teamMembersRepository.save(teamMember);
+        const updatedMember = await this.teamMembersRepository.save(teamMember);
+        await this.emailService.sendEmail(`"Team Manager" <${process.env.MAIL_FROM}>`, 'Your team role has been updated', `<h1>Role Update</h1>
+        <p>Hello ${teamMember.user.username},"</p>
+        <p>Your role in the team "${teamMember.team.name}" has been updated to "${role}"</p>
+        <p>Best regards</p>
+        <p>Team Manager</p>
+    `);
+        return updatedMember;
     }
     async getTeamMembers(teamId) {
         return this.teamMembersRepository.find({
@@ -173,6 +188,7 @@ exports.TeamsService = TeamsService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(team_member_entity_1.TeamMember)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        users_service_1.UsersService])
+        users_service_1.UsersService,
+        email_service_1.EmailService])
 ], TeamsService);
 //# sourceMappingURL=teams.service.js.map
