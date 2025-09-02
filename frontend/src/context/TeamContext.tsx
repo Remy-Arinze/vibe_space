@@ -235,9 +235,11 @@ export function TeamProvider({ children }: { children: ReactNode }) {
 
       const data = await response.json();
       setTeamMembers(data);
+      return data;
     } catch (error) {
       console.error('Fetch team members error:', error);
       setError(error instanceof Error ? error.message : 'An unknown error occurred');
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -265,7 +267,8 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       }
 
       // Refresh team members list
-      await fetchTeamMembers(teamId);
+      const members = await fetchTeamMembers(teamId);
+      setTeamMembers(members);
     } catch (error) {
       console.error('Add team member error:', error);
       setError(error instanceof Error ? error.message : 'An unknown error occurred');

@@ -69,8 +69,7 @@ export default function TeamDetail({ teamId }: TeamDetailProps) {
       setEmail('');
       
       // Refresh team members list
-      const members = await fetchTeamMembers(teamId);
-      setTeamMembers(members);
+      await fetchTeamMembers(teamId);
     } catch (err) {
       setError('Failed to add team member');
     } finally {

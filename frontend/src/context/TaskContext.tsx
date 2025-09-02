@@ -51,6 +51,7 @@ interface TaskContextType {
     assigneeId?: string | null;
   }) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
+  fetchTaskById: (id: string) => Promise<any>;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -256,6 +257,34 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const fetchTaskById = async (id: string) => {
+    if (!token) return null;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await fetch(`http://localhost:3001/api/tasks/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch task');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Fetch task error:', error);
+      setError(error instanceof Error ? error.message : 'An unknown error occurred');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value = {
     tasks,
     isLoading,
@@ -266,6 +295,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     createTask,
     updateTask,
     deleteTask,
+    fetchTaskById,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
