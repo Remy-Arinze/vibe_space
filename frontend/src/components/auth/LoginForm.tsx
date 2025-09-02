@@ -27,9 +27,11 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="max-w-md w-full mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div className="max-w-md w-full mt-10 mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-center">Log In</h2>
-      
+      <p className="text-sm text-gray-600 mb-6 text-center">
+  Welcome back! Please log in to continue where you left off.
+</p>
       {verified && (
         <div className="mb-4 p-2 bg-green-100 text-green-700 rounded">
           Email verified successfully! You can now log in.

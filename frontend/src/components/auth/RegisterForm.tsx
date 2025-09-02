@@ -32,9 +32,11 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="max-w-md w-full mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div className="max-w-md w-full mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-center">Create an Account</h2>
-      
+      <p className="text-sm text-gray-600 mb-6 text-center">
+  Join us today! Create an account to access exclusive features and get started right away.
+</p>
       {error && (
         <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
           {error}
