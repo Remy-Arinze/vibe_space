@@ -25,13 +25,13 @@ interface TeamContextType {
   isLoading: boolean;
   error: string | null;
   fetchTeams: () => Promise<void>;
+  getTeamById: (id: string) => Promise<Team | null>;
   createTeam: (name: string, description: string) => Promise<void>;
   updateTeam: (id: string, name: string, description: string) => Promise<void>;
   deleteTeam: (id: string) => Promise<void>;
   setCurrentTeam: (team: Team | null) => void;
   fetchTeamMembers: (teamId: string) => Promise<void>;
-  addTeamMember: (teamId: string, email: string) => Promise<void>;
-  removeTeamMember: (teamId: string, userId: string) => Promise<void>;
+ addTeamMember: (teamId: string, memberData: { email: string; role: 'ADMIN' | 'MEMBER' }) => Promise<void>;  removeTeamMember: (teamId: string, userId: string) => Promise<void>;
   updateMemberRole: (teamId: string, userId: string, role: 'ADMIN' | 'MEMBER') => Promise<void>;
 }
 
@@ -100,6 +100,28 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   };
+
+  const getTeamById = async (id: string) => {
+  if (!token) return null;
+  try {
+    const response = await fetch(`http://localhost:3001/api/teams/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch team');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Get team by id error:', error);
+    return null;
+  }
+};
+
 
   const createTeam = async (name: string, description: string) => {
     if (!token) return;
@@ -245,38 +267,42 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addTeamMember = async (teamId: string, email: string) => {
-    if (!token) return;
-    
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const response = await fetch(`http://localhost:3001/api/teams/${teamId}/members`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ email }),
-      });
+const addTeamMember = async (
+  teamId: string,
+  memberData: { email: string; role: 'ADMIN' | 'MEMBER' }
+) => {
+  if (!token) return;
+  
+  try {
+    setIsLoading(true);
+    setError(null);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add team member');
-      }
+    const response = await fetch(`http://localhost:3001/api/teams/${teamId}/members`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(memberData), // <-- send both email + role
+    });
 
-      // Refresh team members list
-      const members = await fetchTeamMembers(teamId);
-      setTeamMembers(members);
-    } catch (error) {
-      console.error('Add team member error:', error);
-      setError(error instanceof Error ? error.message : 'An unknown error occurred');
-      throw error;
-    } finally {
-      setIsLoading(false);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to add team member');
     }
-  };
+
+    // Refresh team members list
+    const members = await fetchTeamMembers(teamId);
+    setTeamMembers(members);
+  } catch (error) {
+    console.error('Add team member error:', error);
+    setError(error instanceof Error ? error.message : 'An unknown error occurred');
+    throw error;
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const removeTeamMember = async (teamId: string, userId: string) => {
     if (!token) return;
@@ -344,23 +370,24 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   };
+const value: TeamContextType = {
+  teams,
+  currentTeam,
+  teamMembers,
+  isLoading,
+  error,
+  setCurrentTeam,
+  fetchTeams,
+  getTeamById,
+  fetchTeamMembers,
+  addTeamMember, // now matches the new signature
+  removeTeamMember,
+  updateMemberRole,
+  deleteTeam,
+  createTeam,
+  updateTeam,
+};
 
-  const value = {
-    teams,
-    currentTeam,
-    teamMembers,
-    isLoading,
-    error,
-    fetchTeams,
-    createTeam,
-    updateTeam,
-    deleteTeam,
-    setCurrentTeam,
-    fetchTeamMembers,
-    addTeamMember,
-    removeTeamMember,
-    updateMemberRole,
-  };
 
   return <TeamContext.Provider value={value}>{children}</TeamContext.Provider>;
 }

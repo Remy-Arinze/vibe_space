@@ -1,6 +1,7 @@
 'use client';
 
 import TeamDetail from '@/components/teams/TeamDetail';
+import { use } from 'react';
 
 interface TeamPageProps {
   params: {
@@ -8,10 +9,11 @@ interface TeamPageProps {
   };
 }
 
-export default function TeamPage({ params }: TeamPageProps) {
+export default function TaskPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: teamId } = use(params); 
   return (
     <div className="max-w-7xl mx-auto py-6">
-      <TeamDetail teamId={params.id} />
+      <TeamDetail teamId={teamId} />
     </div>
   );
 }

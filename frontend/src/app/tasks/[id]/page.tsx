@@ -1,6 +1,7 @@
 'use client';
 
 import TaskDetail from '@/components/tasks/TaskDetail';
+import { use } from 'react';
 
 interface TaskPageProps {
   params: {
@@ -8,10 +9,7 @@ interface TaskPageProps {
   };
 }
 
-export default function TaskPage({ params }: TaskPageProps) {
-  return (
-    <div className="max-w-4xl mx-auto py-6">
-      <TaskDetail taskId={params.id} />
-    </div>
-  );
+export default function TaskPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: taskId } = use(params); 
+  return <TaskDetail taskId={taskId} />;
 }

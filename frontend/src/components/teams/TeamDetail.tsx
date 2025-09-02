@@ -10,13 +10,14 @@ interface TeamDetailProps {
 }
 
 export default function TeamDetail({ teamId }: TeamDetailProps) {
+  
   const router = useRouter();
   const { 
     getTeamById, 
     fetchTeamMembers, 
     addTeamMember, 
     removeTeamMember, 
-    updateTeamMemberRole,
+    updateMemberRole,
     deleteTeam 
   } = useTeam();
   
@@ -28,7 +29,7 @@ export default function TeamDetail({ teamId }: TeamDetailProps) {
   
   // For adding new members
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('member');
+  const [role, setRole] = useState('Member');
   const [isAddingMember, setIsAddingMember] = useState(false);
   
   // For modals
@@ -77,23 +78,31 @@ export default function TeamDetail({ teamId }: TeamDetailProps) {
     }
   };
 
-  const handleRoleChange = async (memberId: string, newRole: string) => {
-    try {
-      await updateTeamMemberRole(teamId, memberId, newRole);
-      
-      // Update local state
-      setTeamMembers(teamMembers.map(member => {
-        if (member.id === memberId) {
-          return { ...member, role: newRole };
-        }
-        return member;
-      }));
-      
-      setSuccess('Member role updated successfully');
-    } catch (err) {
-      setError('Failed to update member role');
-    }
-  };
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>, userId: string) => {
+  const value = e.target.value as 'ADMIN' | 'MEMBER';
+  if (value === 'ADMIN' || value === 'MEMBER') {
+    handleRoleChange(userId, value);
+  }
+};
+
+const handleRoleChange = async (userId: string, newRole: 'ADMIN' | 'MEMBER') => {
+  try {
+    await updateMemberRole(teamId, userId, newRole);
+
+    // Update local state
+    setTeamMembers(teamMembers.map(member =>
+      member.userId === userId && member.teamId === teamId
+        ? { ...member, role: newRole }
+        : member
+    ));
+
+    setSuccess('Member role updated successfully');
+  } catch (err) {
+    setError('Failed to update member role');
+  }
+};
+
 
   const handleRemoveMemberClick = (memberId: string) => {
     setMemberToRemove(memberId);
@@ -173,10 +182,10 @@ export default function TeamDetail({ teamId }: TeamDetailProps) {
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="p-6">
           <div className="flex justify-between items-start mb-6">
-            <div>
+            <div className='w-[60%]'>
               <h1 className="text-2xl font-bold text-gray-900">{team.name}</h1>
               {team.description && (
-                <p className="mt-2 text-gray-600">{team.description}</p>
+                <p className="mt-2  text-sm text-gray-600">{team.description}</p>
               )}
             </div>
             <div className="flex space-x-2">
@@ -220,45 +229,49 @@ export default function TeamDetail({ teamId }: TeamDetailProps) {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {teamMembers.map((member) => (
-                      <tr key={member.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-                              <span className="text-gray-500 font-medium">
-                                {member.user.username.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{member.user.username}</div>
-                              <div className="text-sm text-gray-500">{member.user.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <select
-                            value={member.role}
-                            onChange={(e) => handleRoleChange(member.id, e.target.value)}
-                            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                          >
-                            <option value="admin">Admin</option>
-                            <option value="member">Member</option>
-                          </select>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(member.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => handleRemoveMemberClick(member.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
+  {teamMembers.map((member) => (
+    <tr key={member.userId}>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+            <span className="text-gray-500 font-medium">
+              {member.user.username.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div className="ml-4">
+            <div className="text-sm font-medium text-gray-900">{member.user.username}</div>
+            <div className="text-sm text-gray-500">{member.user.email}</div>
+          </div>
+        </div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <select
+          value={member.role}
+            onChange={(e) => handleSelectChange(e, member.userId)}
+
+          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 
+            focus:outline-none focus:ring-blue-500 focus:border-blue-500 
+            sm:text-sm rounded-md"
+        >
+          <option value="Admin">Admin</option>
+          <option value="Member">Member</option>
+        </select>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {new Date(member.createdAt).toLocaleDateString()}
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+        <button
+          onClick={() => handleRemoveMemberClick(member.userId)}
+          className="text-red-600 hover:text-red-900"
+        >
+          Remove
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
                 </table>
               </div>
             )}
@@ -291,8 +304,8 @@ export default function TeamDetail({ teamId }: TeamDetailProps) {
                     onChange={(e) => setRole(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="admin">Admin</option>
-                    <option value="member">Member</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Member">Member</option>
                   </select>
                 </div>
               </div>

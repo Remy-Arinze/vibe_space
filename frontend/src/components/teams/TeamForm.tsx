@@ -47,16 +47,12 @@ export default function TeamForm({ teamId, isEditing = false }: TeamFormProps) {
     setSuccess('');
 
     try {
-      const teamData = {
-        name,
-        description
-      };
 
       if (isEditing && teamId) {
-        await updateTeam(teamId, teamData);
+        await updateTeam(teamId, name, description);
         setSuccess('Team updated successfully');
       } else {
-        await createTeam(teamData);
+        await createTeam(name, description);
         setSuccess('Team created successfully');
         // Reset form after creation
         setName('');
