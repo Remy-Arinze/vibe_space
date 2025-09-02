@@ -4,12 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useAuth } from "@/context/AuthContext"; // ✅ import your auth context
+import { useAuth } from "@/context/AuthContext"; 
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
-  const { user, logout } = useAuth(); // ✅ get user & logout from AuthProvider
+  const { user, logout } = useAuth(); 
 
   const navLinks = [
     { href: "/#features", label: "Features" },
@@ -28,7 +28,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link
           href="/"
-          className="text-2xl font-bold text-blue-600 hover:opacity-80 transition"
+          className="text-2xl font-bold text-[#6366f1] hover:opacity-80 transition"
         >
           VibeSpace
         </Link>
@@ -56,7 +56,7 @@ export default function Navbar() {
           {user ? (
             <div className="relative group">
               <button className="flex items-center gap-2 focus:outline-none">
-                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+                <div className="w-10 h-10 rounded-full bg-[#6366f1] flex items-center justify-center text-white font-semibold">
                   {user.username.charAt(0).toUpperCase()}
                 </div>
                 <span className="text-gray-800">{user.username}</span>

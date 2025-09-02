@@ -23,57 +23,12 @@ export default function Sidebar() {
       </div>
       
       <nav className="mt-5">
-        <div className="px-4 mb-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs uppercase tracking-wide text-gray-400">Teams</h2>
-            <Link 
-              href="/teams/create" 
-              className="text-xs text-gray-400 hover:text-white"
-            >
-              + New
-            </Link>
-          </div>
-          
-          <div className="mt-2 relative">
-            <button
-              onClick={() => setIsTeamMenuOpen(!isTeamMenuOpen)}
-              className="flex items-center justify-between w-full px-2 py-1 text-sm font-medium rounded-md bg-gray-400 hover:bg-gray-500"
-            >
-              <span>{currentTeam?.name || 'Select a team'}</span>
-              <svg
-                className={`w-4 h-4 transition-transform ${isTeamMenuOpen ? 'transform rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </button>
-            
-            {isTeamMenuOpen && (
-              <div className="absolute left-0 right-0 mt-1 bg-gray-400 rounded-md shadow-lg z-10">
-                {teams.map((team) => (
-                  <button
-                    key={team.id}
-                    onClick={() => {
-                      setCurrentTeam(team);
-                      setIsTeamMenuOpen(false);
-                    }}
-                    className={`block w-full text-left px-2 py-1 text-sm ${currentTeam?.id === team.id ? 'bg-gray-600' : 'hover:bg-gray-300'}`}
-                  >
-                    {team.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <div className="px-2">
+      
+      {/* Nav */}
+    <div className="px-2 mt-5">
           <Link
             href="/dashboard"
-            className={`flex items-center px-4 py-2 mt-1 text-sm rounded-md ${isActive('/dashboard') ? 'bg-gray-400' : 'hover:bg-gray-500'}`}
+            className={`flex items-center px-4 py-2 mt-1 text-sm rounded-md ${isActive('/dashboard') ? 'bg-[#6366f1] text-white' : 'hover:bg-[#6366f1]/20'}`}
           >
             <svg
               className="w-5 h-5 mr-2"
@@ -94,7 +49,7 @@ export default function Sidebar() {
           
           <Link
             href="/tasks"
-            className={`flex items-center px-4 py-2 mt-1 text-sm rounded-md ${isActive('/tasks') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+            className={`flex items-center px-4 py-2 my- text-sm rounded-md ${isActive('/tasks') ? 'bg-[#6366f1] text-white' : 'hover:bg-[#6366f1]/20'}`}
           >
             <svg
               className="w-5 h-5 mr-2"
@@ -115,7 +70,7 @@ export default function Sidebar() {
           
           <Link
             href="/teams"
-            className={`flex items-center px-4 py-2 mt-1 text-sm rounded-md ${isActive('/teams') ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+            className={`flex items-center px-4 py-2 mt-1 text-sm rounded-md ${isActive('/teams') ? 'bg-[#6366f1] text-white' : 'hover:bg-[#6366f1]/20'}`}
           >
             <svg
               className="w-5 h-5 mr-2"
@@ -133,6 +88,54 @@ export default function Sidebar() {
             </svg>
             Team Members
           </Link>
+        </div>
+
+        {/* Teams */}
+         <div className="px-4 mt-10 mb-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs uppercase tracking-wide text-gray-400">Teams</h2>
+            <Link 
+              href="/teams/create" 
+              className="text-xs text-gray-400 hover:text-white"
+            >
+              + New
+            </Link>
+          </div>
+          
+          <div className="mt-2 relative">
+            <button
+              onClick={() => setIsTeamMenuOpen(!isTeamMenuOpen)}
+              className="flex items-center justify-between w-full px-2 py-1 text-sm font-medium rounded-md bg-gray-200 hover:bg-gray-300"
+            >
+              <span className='text-[#6366f1]'>{currentTeam?.name || 'Select a team'}</span>
+              <svg
+                className={`w-4 h-4 transition-transform ${isTeamMenuOpen ? 'transform rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            
+            {isTeamMenuOpen && (
+              <div className="absolute left-0 right-0 mt-1 bg-[#6366f1]/10 rounded-md shadow-lg z-10">
+                {teams.map((team) => (
+                  <button
+                    key={team.id}
+                    onClick={() => {
+                      setCurrentTeam(team);
+                      setIsTeamMenuOpen(false);
+                    }}
+                    className={`block w-full text-left  px-2 py-1 text-sm ${currentTeam?.id === team.id ? 'bg-[#6366f1]/50' : 'hover:bg-gray-300'}`}
+                  >
+                    {team.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </nav>
     </div>

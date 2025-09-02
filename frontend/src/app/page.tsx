@@ -3,11 +3,13 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
+import { useAuth } from "@/context/AuthContext";
 
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
-
+    const { user } = useAuth(); 
+  
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 900);
     return () => clearTimeout(timer);
@@ -42,9 +44,12 @@ export default function Home() {
           transition={{ duration: 0.5, delay: 0.4 }}
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <a href="/signup" className="px-8 py-4 rounded-lg font-semibold bg-[#6366f1] text-white hover:bg-[#4f46e5] transition shadow-lg">
-            Get Started Free
-          </a>
+            {!user ? <a href="/signup" className="px-8 py-4 rounded-lg font-semibold bg-[#6366f1] text-white  transition shadow-lg">
+              Get Started Free
+            </a> : <a href="/dashboard" className="px-8 py-4 rounded-lg font-semibold bg-[#6366f1] text-white  transition shadow-lg">
+              Go to Dashboard
+            </a>}
+       
           <a href="/demo" className="px-8 py-4 rounded-lg font-semibold bg-white text-[#6366f1] border border-[#6366f1] hover:bg-gray-50 transition">
             Watch Demo
           </a>
@@ -303,9 +308,11 @@ export default function Home() {
             viewport={{ once: true }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <a href="/signup" className="px-8 py-4 rounded-lg font-semibold bg-white text-[#6366f1] hover:bg-gray-100 transition shadow-lg">
+           {!user ? <a href="/signup" className="px-8 py-4 rounded-lg font-semibold bg-white text-[#6366f1] hover:bg-gray-100 transition shadow-lg">
               Get Started Free
-            </a>
+            </a> : <a href="/dashboard" className="px-8 py-4 rounded-lg font-semibold bg-white text-[#6366f1] hover:bg-gray-100 transition shadow-lg">
+              Go to Dashboard
+            </a>}
             <a href="/contact" className="px-8 py-4 rounded-lg font-semibold bg-transparent text-white border border-white hover:bg-white/10 transition">
               Contact Sales
             </a>

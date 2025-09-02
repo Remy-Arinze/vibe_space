@@ -28,7 +28,7 @@ export default function Header() {
                   className="max-w-xs flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   <span className="sr-only">Open user menu</span>
-                  <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                  <div className="h-8 w-8 rounded-full bg-[#6366f1] flex items-center justify-center text-white">
                     {user?.username.charAt(0).toUpperCase()}
                   </div>
                   <span className="ml-2 text-gray-700">{user?.username}</span>
