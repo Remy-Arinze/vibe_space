@@ -19,11 +19,13 @@ const typeorm_2 = require("typeorm");
 const task_entity_1 = require("./entities/task.entity");
 const teams_service_1 = require("../teams/teams.service");
 const users_service_1 = require("../users/users.service");
+const email_service_1 = require("../common/services/email.service");
 let TasksService = class TasksService {
-    constructor(tasksRepository, teamsService, usersService) {
+    constructor(tasksRepository, teamsService, usersService, emailService) {
         this.tasksRepository = tasksRepository;
         this.teamsService = teamsService;
         this.usersService = usersService;
+        this.emailService = emailService;
     }
     async create(createTaskDto, creator) {
         const isMember = await this.teamsService.isUserTeamMember(createTaskDto.teamId, creator.id);
@@ -42,7 +44,15 @@ let TasksService = class TasksService {
             creator,
             creatorId: creator.id,
         });
-        return this.tasksRepository.save(task);
+        const savedTask = await this.tasksRepository.save(task);
+        if (createTaskDto.assigneeId) {
+            const assignee = await this.usersService.findOne(createTaskDto.assigneeId);
+            await this.emailService.sendEmail(assignee.email, 'New Task Assigned', `<p>Hello <strong>${assignee.username}</strong>,</p>
+         <p>You have been assigned a new task: <strong>${savedTask.title}</strong>.</p>
+         <p>Description: ${savedTask.description || 'No description'}</p>
+         <p>- Team Task Manager</p>`);
+        }
+        return savedTask;
     }
     async findAll(teamId, userId) {
         const isMember = await this.teamsService.isUserTeamMember(teamId, userId);
@@ -70,12 +80,16 @@ let TasksService = class TasksService {
     }
     async update(id, updateTaskDto, userId) {
         const task = await this.findOne(id, userId);
-        if (updateTaskDto.assigneeId) {
+        if (updateTaskDto.assigneeId && updateTaskDto.assigneeId !== task.assigneeId) {
             const assignee = await this.usersService.findOne(updateTaskDto.assigneeId);
             const isAssigneeMember = await this.teamsService.isUserTeamMember(assignee.id, task.teamId);
             if (!isAssigneeMember) {
                 throw new common_1.ForbiddenException('Assignee must be a team member');
             }
+            await this.emailService.sendEmail(assignee.email, 'Task Assigned to You', `<p>Hello <strong>${assignee.username}</strong>,</p>
+         <p>You have been assigned a task: <strong>${task.title}</strong>.</p>
+         <p>Description: ${updateTaskDto.description || task.description || 'No description'}</p>
+         <p>- Team Task Manager</p>`);
         }
         const updatedTask = this.tasksRepository.merge(task, updateTaskDto);
         return this.tasksRepository.save(updatedTask);
@@ -107,6 +121,7 @@ exports.TasksService = TasksService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(task_entity_1.Task)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         teams_service_1.TeamsService,
-        users_service_1.UsersService])
+        users_service_1.UsersService,
+        email_service_1.EmailService])
 ], TasksService);
 //# sourceMappingURL=tasks.service.js.map

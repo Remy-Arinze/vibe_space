@@ -14,6 +14,7 @@ const tasks_controller_1 = require("./tasks.controller");
 const tasks_service_1 = require("./tasks.service");
 const teams_module_1 = require("../teams/teams.module");
 const users_module_1 = require("../users/users.module");
+const email_service_1 = require("../common/services/email.service");
 let TasksModule = class TasksModule {
 };
 exports.TasksModule = TasksModule;
@@ -25,7 +26,7 @@ exports.TasksModule = TasksModule = __decorate([
             users_module_1.UsersModule,
         ],
         controllers: [tasks_controller_1.TasksController],
-        providers: [tasks_service_1.TasksService],
+        providers: [tasks_service_1.TasksService, email_service_1.EmailService],
         exports: [tasks_service_1.TasksService],
     })
 ], TasksModule);
