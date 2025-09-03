@@ -71,7 +71,7 @@ export default function TaskDetail({ taskId }: TaskDetailProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-white rounded-lg  overflow-hidden">
       <div className="p-6">
         <div className="flex justify-between items-start mb-6">
           <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>

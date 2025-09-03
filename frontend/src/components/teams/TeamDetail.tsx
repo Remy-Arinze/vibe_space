@@ -10,7 +10,6 @@ interface TeamDetailProps {
 }
 
 export default function TeamDetail({ teamId }: TeamDetailProps) {
-  
   const router = useRouter();
   const { 
     getTeamById, 
@@ -26,7 +25,9 @@ export default function TeamDetail({ teamId }: TeamDetailProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+  const [isRemovingMember, setIsRemovingMember] = useState(false);
+
   // For adding new members
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('Member');
@@ -36,6 +37,10 @@ export default function TeamDetail({ teamId }: TeamDetailProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
   const [showRemoveMemberModal, setShowRemoveMemberModal] = useState(false);
+
+  // Role change modal state
+  const [showRoleChangeModal, setShowRoleChangeModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<{ userId: string, newRole: 'Admin' | 'Member', oldRole: 'Admin' | 'Member' } | null>(null);
 
   useEffect(() => {
     const loadTeamData = async () => {
@@ -70,7 +75,8 @@ export default function TeamDetail({ teamId }: TeamDetailProps) {
       setEmail('');
       
       // Refresh team members list
-      await fetchTeamMembers(teamId);
+      const members = await fetchTeamMembers(teamId);
+      setTeamMembers(members);
     } catch (err) {
       setError('Failed to add team member');
     } finally {
@@ -78,31 +84,48 @@ export default function TeamDetail({ teamId }: TeamDetailProps) {
     }
   };
 
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>, userId: string, currentRole: 'ADMIN' | 'MEMBER') => {
+    const value = e.target.value as 'Admin' | 'Member';
+    if (value === 'Admin' || value === 'Member') {
+      setSelectedMember({ userId, newRole: value, oldRole: currentRole });
+      setShowRoleChangeModal(true);
+    }
+  };
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>, userId: string) => {
-  const value = e.target.value as 'ADMIN' | 'MEMBER';
-  if (value === 'ADMIN' || value === 'MEMBER') {
-    handleRoleChange(userId, value);
-  }
-};
+ const confirmRoleChange = async () => {
+  if (!selectedMember) return;
 
-const handleRoleChange = async (userId: string, newRole: 'ADMIN' | 'MEMBER') => {
+  setShowRoleChangeModal(false);
+  setIsUpdatingRole(true);
+
   try {
-    await updateMemberRole(teamId, userId, newRole);
+    await updateMemberRole(teamId, selectedMember.userId, selectedMember.newRole);
 
-    // Update local state
     setTeamMembers(teamMembers.map(member =>
-      member.userId === userId && member.teamId === teamId
-        ? { ...member, role: newRole }
+      member.userId === selectedMember.userId
+        ? { ...member, role: selectedMember.newRole }
         : member
     ));
 
     setSuccess('Member role updated successfully');
   } catch (err) {
     setError('Failed to update member role');
+  } finally {
+    setSelectedMember(null);
+    setIsUpdatingRole(false);
   }
 };
-
+  const cancelRoleChange = () => {
+    if (selectedMember) {
+      setTeamMembers(teamMembers.map(member =>
+        member.userId === selectedMember.userId
+          ? { ...member, role: selectedMember.oldRole }
+          : member
+      ));
+    }
+    setSelectedMember(null);
+    setShowRoleChangeModal(false);
+  };
 
   const handleRemoveMemberClick = (memberId: string) => {
     setMemberToRemove(memberId);
@@ -111,24 +134,27 @@ const handleRoleChange = async (userId: string, newRole: 'ADMIN' | 'MEMBER') => 
 
   const confirmRemoveMember = async () => {
     if (!memberToRemove) return;
-    
+    setShowRemoveMemberModal(false);
+    setIsRemovingMember(true);
     try {
       await removeTeamMember(teamId, memberToRemove);
       setShowRemoveMemberModal(false);
       setMemberToRemove(null);
       
-      // Refresh team members list
       const members = await fetchTeamMembers(teamId);
       setTeamMembers(members);
+          setIsRemovingMember(false);
       
       setSuccess('Member removed successfully');
     } catch (err) {
       setError('Failed to remove team member');
+          setIsRemovingMember(false);
     }
   };
 
   const handleDeleteTeam = async () => {
     try {
+    
       await deleteTeam(teamId);
       router.push('/teams');
     } catch (err) {
@@ -162,8 +188,15 @@ const handleRoleChange = async (userId: string, newRole: 'ADMIN' | 'MEMBER') => 
     );
   }
 
+ 
+
   return (
     <div className="space-y-6">
+        {isUpdatingRole || isRemovingMember && (
+<div className="flex absolute top-[50%] left-[50%] -translate-[50%] justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+)}
       {success && (
         <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
           <span className="block sm:inline">{success}</span>
@@ -179,13 +212,13 @@ const handleRoleChange = async (userId: string, newRole: 'ADMIN' | 'MEMBER') => 
         </div>
       )}
       
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg overflow-hidden">
         <div className="p-6">
           <div className="flex justify-between items-start mb-6">
             <div className='w-[60%]'>
               <h1 className="text-2xl font-bold text-gray-900">{team.name}</h1>
               {team.description && (
-                <p className="mt-2  text-sm text-gray-600">{team.description}</p>
+                <p className="mt-2 text-sm text-gray-600 truncate">{team.description}</p>
               )}
             </div>
             <div className="flex space-x-2">
@@ -229,49 +262,45 @@ const handleRoleChange = async (userId: string, newRole: 'ADMIN' | 'MEMBER') => 
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-  {teamMembers.map((member) => (
-    <tr key={member.userId}>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="flex items-center">
-          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
-            <span className="text-gray-500 font-medium">
-              {member.user.username.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="ml-4">
-            <div className="text-sm font-medium text-gray-900">{member.user.username}</div>
-            <div className="text-sm text-gray-500">{member.user.email}</div>
-          </div>
-        </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <select
-          value={member.role}
-            onChange={(e) => handleSelectChange(e, member.userId)}
-
-          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 
-            focus:outline-none focus:ring-blue-500 focus:border-blue-500 
-            sm:text-sm rounded-md"
-        >
-          <option value="Admin">Admin</option>
-          <option value="Member">Member</option>
-        </select>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {new Date(member.createdAt).toLocaleDateString()}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <button
-          onClick={() => handleRemoveMemberClick(member.userId)}
-          className="text-red-600 hover:text-red-900"
-        >
-          Remove
-        </button>
-      </td>
-    </tr>
-  ))}
-</tbody>
-
+                    {teamMembers.map((member) => (
+                      <tr key={member.userId}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                              <span className="text-gray-500 font-medium">
+                                {member.user.username.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{member.user.username}</div>
+                              <div className="text-sm text-gray-500">{member.user.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <select
+                            value={member.role}
+                            onChange={(e) => handleSelectChange(e, member.userId, member.role)}
+                            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                          >
+                            <option value="Admin">Admin</option>
+                            <option value="Member">Member</option>
+                          </select>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(member.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => handleRemoveMemberClick(member.userId)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
                 </table>
               </div>
             )}
@@ -323,7 +352,7 @@ const handleRoleChange = async (userId: string, newRole: 'ADMIN' | 'MEMBER') => 
         </div>
       </div>
 
-      {/* Delete Team Confirmation Modal */}
+      {/* Delete Team Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md mx-auto">
@@ -347,7 +376,7 @@ const handleRoleChange = async (userId: string, newRole: 'ADMIN' | 'MEMBER') => 
         </div>
       )}
 
-      {/* Remove Member Confirmation Modal */}
+      {/* Remove Member Modal */}
       {showRemoveMemberModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md mx-auto">
@@ -365,6 +394,32 @@ const handleRoleChange = async (userId: string, newRole: 'ADMIN' | 'MEMBER') => 
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
               >
                 Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Role Change Modal */}
+      {showRoleChangeModal && selectedMember && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-auto">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Confirm Role Change</h3>
+            <p className="text-gray-500 mb-6">
+              Are you sure you want to change this member's role to <strong>{selectedMember.newRole}</strong>?
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelRoleChange}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRoleChange}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Confirm
               </button>
             </div>
           </div>

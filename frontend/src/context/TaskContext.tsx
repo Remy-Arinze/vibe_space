@@ -27,6 +27,7 @@ interface Task {
   assignee?: {
     id: string;
     username: string;
+    email: string;
   } | null;
 }
 
@@ -88,6 +89,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await response.json();
+      console.log('Fetched tasks:', data);
       setTasks(data);
     } catch (error) {
       console.error('Fetch tasks error:', error);

@@ -13,7 +13,7 @@ interface TeamMember {
   id: string;
   userId: string;
   teamId: string;
-  role: 'ADMIN' | 'MEMBER';
+  role: 'Admin' | 'Member';
   username: string;
   email: string;
 }
@@ -31,8 +31,8 @@ interface TeamContextType {
   deleteTeam: (id: string) => Promise<void>;
   setCurrentTeam: (team: Team | null) => void;
   fetchTeamMembers: (teamId: string) => Promise<void>;
- addTeamMember: (teamId: string, memberData: { email: string; role: 'ADMIN' | 'MEMBER' }) => Promise<void>;  removeTeamMember: (teamId: string, userId: string) => Promise<void>;
-  updateMemberRole: (teamId: string, userId: string, role: 'ADMIN' | 'MEMBER') => Promise<void>;
+ addTeamMember: (teamId: string, memberData: { email: string; role: 'Admin' | 'Member' }) => Promise<void>;  removeTeamMember: (teamId: string, userId: string) => Promise<void>;
+  updateMemberRole: (teamId: string, userId: string, role: 'Admin' | 'Member') => Promise<void>;
 }
 
 const TeamContext = createContext<TeamContextType | undefined>(undefined);
@@ -52,23 +52,40 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   }, [token]);
 
   useEffect(() => {
-    // Restore current team from localStorage if available
-    const storedTeam = localStorage.getItem('currentTeam');
-    if (storedTeam) {
-      try {
-        const parsedTeam = JSON.parse(storedTeam);
-        setCurrentTeam(parsedTeam);
-        fetchTeamMembers(parsedTeam.id);
-      } catch (error) {
-        console.error('Error parsing stored team:', error);
+  if (teams.length === 0) return;
+
+  const storedTeam = localStorage.getItem('currentTeam');
+  let teamToSet: Team | null = null;
+
+  if (storedTeam) {
+    try {
+      const parsedTeam = JSON.parse(storedTeam);
+      // Check if this team exists in the user's current teams
+      const validTeam = teams.find(team => team.id === parsedTeam.id);
+      if (validTeam) {
+        teamToSet = validTeam;
+      } else {
+        // Stored team is invalid for this account
         localStorage.removeItem('currentTeam');
       }
+    } catch (error) {
+      console.error('Error parsing stored team:', error);
+      localStorage.removeItem('currentTeam');
     }
-  }, [teams]);
+  }
+
+  // If no valid stored team, default to the first team
+  if (!teamToSet && teams.length > 0) {
+    teamToSet = teams[0];
+  }
+
+  setCurrentTeam(teamToSet);
+  if (teamToSet) fetchTeamMembers(teamToSet.id);
+}, [teams]);
+
 
   const fetchTeams = async () => {
     if (!token) return;
-    
     try {
       setIsLoading(true);
       setError(null);
@@ -85,6 +102,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       }
 
       const data = await response.json();
+      console.log('Fetched teams:', data);
       setTeams(data);
       
       // Set first team as current if no current team is selected
@@ -269,7 +287,7 @@ export function TeamProvider({ children }: { children: ReactNode }) {
 
 const addTeamMember = async (
   teamId: string,
-  memberData: { email: string; role: 'ADMIN' | 'MEMBER' }
+  memberData: { email: string; role: 'Admin' | 'Member' }
 ) => {
   if (!token) return;
   
@@ -334,7 +352,7 @@ const addTeamMember = async (
     }
   };
 
-  const updateMemberRole = async (teamId: string, userId: string, role: 'ADMIN' | 'MEMBER') => {
+  const updateMemberRole = async (teamId: string, userId: string, role: 'Admin' | 'Member') => {
     if (!token) return;
     
     try {
