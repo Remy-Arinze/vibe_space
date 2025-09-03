@@ -42,7 +42,8 @@ export class TasksController {
     @Body() updateTaskDto: UpdateTaskDto,
     @GetUser('id') userId: string,
   ) {
-    return this.tasksService.update(id, updateTaskDto, userId);
+    const updatedTask = await this.tasksService.update(id, updateTaskDto, userId);
+    return updatedTask;
   }
 
   @Delete(':id')

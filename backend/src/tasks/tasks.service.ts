@@ -92,6 +92,7 @@ export class TasksService {
 
   async update(id: string, updateTaskDto: UpdateTaskDto, userId: string): Promise<Task> {
     const task = await this.findOne(id, userId);
+    const oldStatus = task.status;
 
     if (updateTaskDto.assigneeId && updateTaskDto.assigneeId !== task.assigneeId) {
       const assignee = await this.usersService.findOne(updateTaskDto.assigneeId);
@@ -115,7 +116,21 @@ export class TasksService {
     }
 
     const updatedTask = this.tasksRepository.merge(task, updateTaskDto);
-    return this.tasksRepository.save(updatedTask);
+    const savedTask = await this.tasksRepository.save(updatedTask);
+
+    // Send email notification if status changed and task has an assignee
+    if (updateTaskDto.status && updateTaskDto.status !== oldStatus && savedTask.assignee) {
+      await this.emailService.sendEmail(
+        savedTask.assignee.email,
+        'Task Status Updated',
+        `<p>Hello <strong>${savedTask.assignee.username}</strong>,</p>
+         <p>The status of your task "<strong>${savedTask.title}</strong>" has been updated from <strong>${oldStatus}</strong> to <strong>${savedTask.status}</strong>.</p>
+         <p>Description: ${savedTask.description || 'No description'}</p>
+         <p>- Team Task Manager</p>`
+      );
+    }
+
+    return savedTask;
   }
 
   async remove(id: string, userId: string): Promise<void> {
